@@ -64,6 +64,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     public static final int PAN_TO_DESTINATION_ANIMATION = 2;
     public static final int BOTTOM_SHEET_EXPANDED = 0;
     public static final int BOTTOM_SHEET_CLOSED = 1;
+    private static final int vertical = 0, horizontal = 1;
 
 
     public int bottomsheetstate = BOTTOM_SHEET_CLOSED;
@@ -119,7 +120,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         item3activities.add(R.drawable.ic_running);
         item3activities.add(R.drawable.ic_kayaking);
         mDiscoverTiles.add(new DiscoverTile("Wanaka", (R.drawable.wanaka), item1activities, -44.71, 169.13));
-        mDiscoverTiles.add(new DiscoverTile("Auckland", (R.drawable.discover), item2activities, CENTER.latitude,CENTER.longitude));
+        mDiscoverTiles.add(new DiscoverTile("Auckland", (R.drawable.discover), item2activities, CENTER.latitude, CENTER.longitude));
         mDiscoverTiles.add(new DiscoverTile("Taupo", (R.drawable.group), item3activities, -38.67, 176.075));
         mDiscoverTiles.add(new DiscoverTile("Mt.Eden", R.drawable.profile, item1activities, -36.877, 174.764));
 
@@ -131,11 +132,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             public void onClick(View v) {
                 if (mMap.isMyLocationEnabled()) {
                     fetchLastLocation();
-                    /*while (!locationFetched) {
-                        // Wait for location to be fetched.
-                    }*/
-                    //panToDestination(currentLoc);
-                    //locationFetched = false;
                 }
             }
         });
@@ -164,24 +160,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
         mAppBarLayout = (AppBarLayout) findViewById(R.id.app_bar);
-
-        mBottomsheet = findViewById(R.id.bottom_sheet);
-        mBottomSheetBehavior = BottomSheetBehavior.from(mBottomsheet);
-        initializeBottomSheet();
-
         mRecyclerView = (RecyclerView) findViewById(R.id.recycler_view);
-        /*mRecyclerView.setOnFlingListener(new RecyclerView.OnFlingListener() {
-            @Override
-            public boolean onFling(int velocityX, int velocityY) {
-                velocityX = (int)(velocityX*FLING_SCALE_DOWN_FACTOR); // (between 0 for no fling, and 1 for normal fling, or more for faster fling).
-                return mRecyclerView.fling(velocityX, 0);
-            }
-        });*/
-
-
-        // Constructor in newInstance indicates number of tiles.
-       /* BottomSheetDialogFragment bottomSheetDialogFragment = DiscoverTilesListDialogFragment.newInstance(30);
-        bottomSheetDialogFragment.show(getSupportFragmentManager(),bottomSheetDialogFragment.getTag());*/
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -248,12 +227,13 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         mMap = googleMap;
 
         // Initialize map
-        mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
+        mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
         mMap.setBuildingsEnabled(true);
         mMap.setLatLngBoundsForCameraTarget(NEWZEALAND);
         mMap.setMinZoomPreference(5);
         mMap.getUiSettings().setMyLocationButtonEnabled(false);
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(CENTER, 5));
+        mMap.getUiSettings().setCompassEnabled(false);
 
         if (permissionflag) {
             mMap.setMyLocationEnabled(true);
@@ -305,15 +285,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onCancel() {
 
-    }
-
-    @Override
-    public void onBackPressed() {
-        if (mBottomSheetBehavior.getState() == BottomSheetBehavior.STATE_EXPANDED) {
-            mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
-        } else {
-            super.onBackPressed();
-        }
     }
 
     /*Location Services*/
@@ -373,6 +344,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         mAdapter = new RecyclerAdapter(mDiscoverTiles, MainActivity.this);
         mLinearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
         mRecyclerView.setLayoutManager(mLinearLayoutManager);
+        mRecyclerView.addItemDecoration(new DividerItemDecoration(0, horizontal, mScreenWidth, mScreenHeight));
         mRecyclerView.setAdapter(mAdapter);
         SnapHelper helper = new LinearSnapHelper();
         helper.attachToRecyclerView(mRecyclerView);
@@ -494,15 +466,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-    public int getBottomsheetstate() {
-        return bottomsheetstate;
-    }
-
     public GoogleMap getMap() {
         return mMap;
     }
 
-    public void closeBottomsheet(){
-        mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+    public int getScreenHeight() {
+        return mScreenHeight;
     }
 }

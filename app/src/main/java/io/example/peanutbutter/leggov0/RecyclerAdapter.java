@@ -1,6 +1,7 @@
 package io.example.peanutbutter.leggov0;
 
 import android.app.Activity;
+import android.support.design.widget.AppBarLayout;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
@@ -29,31 +30,39 @@ import static android.support.v7.widget.helper.ItemTouchHelper.DOWN;
  * Created by Samuel on 1/07/2017.
  */
 
-public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerAdapter.ViewHolder> implements GoogleMap.CancelableCallback ,
-        ItemTouchHelperAdapter{
+public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerAdapter.ViewHolder> implements GoogleMap.CancelableCallback,
+        ItemTouchHelperAdapter {
 
     public static final String TAG = "RecyclerAdapter";
+    public static final int ScaleFactor = 27;
     private ArrayList<DiscoverTile> mDiscoverTiles;
     private GoogleMap mMap;
     private MainActivity mActivity;
+    private int mScreenHeight;
     private int position;
     private int lastposition;
+    private ViewGroup.LayoutParams mImageviewParams;
 
     public class ViewHolder extends RecyclerView.ViewHolder {
 
         public final CardView mCardView;
         public final ImageView mImageView;
-        public final TextView mTextView;
-        public final GridView mGridView;
 
         public ViewHolder(View view) {
             super(view);
             mCardView = (CardView) view.findViewById(R.id.tile_cardview);
-            mCardView
             mImageView = (ImageView) view.findViewById(R.id.location_imageview);
-            mTextView = (TextView) view.findViewById(R.id.location_textview);
-            mGridView = (GridView) view.findViewById(R.id.activity_gridview);
+            initializeCard();
         }
+
+        public void initializeCard() {
+            mImageviewParams = mImageView.getLayoutParams();
+            int NewHeight = (mScreenHeight / 100) * ScaleFactor;
+            mImageviewParams.height = NewHeight;
+            mImageviewParams.width = (300 * NewHeight) / 200;
+            mImageView.setLayoutParams(mImageviewParams);
+        }
+
 
     }
 
@@ -65,6 +74,7 @@ public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerAdapter.ViewHo
         this.mDiscoverTiles = mDiscoverTiles;
         this.mMap = activity.getMap();
         this.mActivity = activity;
+        this.mScreenHeight = activity.getScreenHeight();
     }
 
     @Override
@@ -79,7 +89,6 @@ public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerAdapter.ViewHo
     public void onBindViewHolder(RecyclerAdapter.ViewHolder holder, int position) {
         //Log.d(TAG, "onBindViewHolder: Discover Tile " + mDiscoverTiles.get(position).getName() + " has been loaded.");
         holder.mImageView.setImageResource(mDiscoverTiles.get(position).getPhoto());
-        holder.mTextView.setText(mDiscoverTiles.get(position).getName());
         //mMap.animateCamera(CameraUpdateFactory.newLatLng();
     }
 
@@ -90,13 +99,9 @@ public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerAdapter.ViewHo
 
     @Override
     public void onViewAttachedToWindow(ViewHolder holder) {
-        if (mActivity.getBottomsheetstate() == MainActivity.BOTTOM_SHEET_EXPANDED) {
-            Log.d(TAG, "onViewAttachedToWindow: " + holder.mTextView.getText());
-            //locationName = (String) holder.mTextView.getText();
-            position = holder.getAdapterPosition();
-            animateToTileLocation(new LatLng(mDiscoverTiles.get(position).getLat(), mDiscoverTiles.get(position).getLng()));
-
-        }
+        //locationName = (String) holder.mTextView.getText();
+        position = holder.getAdapterPosition();
+        animateToTileLocation(new LatLng(mDiscoverTiles.get(position).getLat(), mDiscoverTiles.get(position).getLng()));
         super.onViewAttachedToWindow(holder);
     }
 
@@ -111,23 +116,20 @@ public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerAdapter.ViewHo
     }
 
     public void checkCameraAnimation(ViewHolder holder) {
-        if (mActivity.getBottomsheetstate() == MainActivity.BOTTOM_SHEET_EXPANDED) {
-            Log.d(TAG, "onDetachedToWindow: " + holder.mTextView.getText());
-            //locationName = (String) holder.mTextView.getText();
-            if (position == holder.getAdapterPosition()) {
-                if (position == 0) {
-                    LatLng correctedposition = new LatLng(mDiscoverTiles.get(position + 1).getLat(), mDiscoverTiles.get(position + 1).getLng());
-                    animateToTileLocation(correctedposition);
-                } else if (position == (mDiscoverTiles.size() - 1)) {
-                    LatLng correctedposition = new LatLng(mDiscoverTiles.get(position - 1).getLat(), mDiscoverTiles.get(position - 1).getLng());
-                    animateToTileLocation(correctedposition);
-                } else {
-                    LatLng correctedposition = new LatLng(mDiscoverTiles.get(lastposition).getLat(), mDiscoverTiles.get(lastposition).getLng());
-                    animateToTileLocation(correctedposition);
-                }
+        //locationName = (String) holder.mTextView.getText();
+        if (position == holder.getAdapterPosition()) {
+            if (position == 0) {
+                LatLng correctedposition = new LatLng(mDiscoverTiles.get(position + 1).getLat(), mDiscoverTiles.get(position + 1).getLng());
+                animateToTileLocation(correctedposition);
+            } else if (position == (mDiscoverTiles.size() - 1)) {
+                LatLng correctedposition = new LatLng(mDiscoverTiles.get(position - 1).getLat(), mDiscoverTiles.get(position - 1).getLng());
+                animateToTileLocation(correctedposition);
             } else {
-                lastposition = position;
+                LatLng correctedposition = new LatLng(mDiscoverTiles.get(lastposition).getLat(), mDiscoverTiles.get(lastposition).getLng());
+                animateToTileLocation(correctedposition);
             }
+        } else {
+            lastposition = position;
         }
     }
 
