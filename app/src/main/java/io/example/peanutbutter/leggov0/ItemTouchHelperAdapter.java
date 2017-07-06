@@ -20,7 +20,7 @@ public interface ItemTouchHelperAdapter {
      */
     void onItemDismiss(int position);
 
-    /** Called when an item has been swiped right.
+    /** Called when an item has been swiped.
      *
      * @param position
      */

@@ -6,10 +6,10 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Point;
 import android.location.Location;
-import android.media.Image;
 import android.support.annotation.NonNull;
 import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.BottomSheetBehavior;
+import android.support.design.widget.CoordinatorLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
@@ -22,6 +22,8 @@ import android.support.v7.widget.SnapHelper;
 import android.support.v7.widget.helper.ItemTouchHelper;
 import android.util.Log;
 import android.view.Display;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
@@ -41,14 +43,16 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 
+import static io.example.peanutbutter.leggov0.RecyclerAdapter.ScaleFactor;
+
 public class MainActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.CancelableCallback,
-        ActivityCompat.OnRequestPermissionsResultCallback, DiscoverTilesListDialogFragment.Listener {
+        ActivityCompat.OnRequestPermissionsResultCallback {
 
     // Constants
     public static final String TAG = "MainActivity";
@@ -56,44 +60,38 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     public static final LatLngBounds NEWZEALAND = new LatLngBounds(new LatLng(-47.25, 163.95),
             new LatLng(-33.967, 179.73));
     public static final LatLng CENTER = new LatLng(-41.291, 173.45);
-    public static final double FLING_SCALE_DOWN_FACTOR = 1.1;
     public static final int PLACE_PICKER_REQUEST = 1;
-    public static final float SCALEFACTOR = 4;
     public static final int ZOOM_IN_ANIMATION = 0;
     public static final int ZOOM_OUT_ANIMATION = 1;
     public static final int PAN_TO_DESTINATION_ANIMATION = 2;
-    public static final int BOTTOM_SHEET_EXPANDED = 0;
-    public static final int BOTTOM_SHEET_CLOSED = 1;
-    private static final int vertical = 0, horizontal = 1;
-
-
-    public int bottomsheetstate = BOTTOM_SHEET_CLOSED;
+    public static final int vertical = 0, horizontal = 1;
+    public static final int EXPANDED = 0, COLLAPSED = 1;
 
     // UI elements
     private ImageButton mMyLocation;
     private TextView mSearchText;
-    private BottomSheetBehavior mBottomSheetBehavior;
+    private CoordinatorLayout mCoordinatorLayout;
     private AppBarLayout mAppBarLayout;
-    private View mBottomsheet;
     private RecyclerView mRecyclerView;
-    private RecyclerView.LayoutManager mLinearLayoutManager;
+    private CustomLayoutManager mLinearLayoutManager;
+    private ViewGroup.LayoutParams mRecyclerViewParams;
     private ViewGroup.LayoutParams mMapParams;
-    private ViewGroup.LayoutParams mBottomsheetParams;
-
-
     private SupportMapFragment mapFragment;
+    private CustomBottomSheetBehavior mBottomSheetBehavior;
+    private View mBottomSheet;
 
     private boolean permissionflag;
     private GoogleMap mMap;
     private int mScreenHeight;
     private int mScreenWidth;
-    private float mBottomSheetHeight;
     private int mCameraAnimation;
     private Boolean locationFetched = false;
     private LatLng currentLoc;
     private ArrayList<DiscoverTile> mDiscoverTiles;
     private RecyclerAdapter mAdapter;
     private FusedLocationProviderClient mFusedLocationClient;
+    private SnapHelper helper;
+    private int mRecyclerviewState = COLLAPSED;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -160,8 +158,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
         mAppBarLayout = (AppBarLayout) findViewById(R.id.app_bar);
+        mCoordinatorLayout = (CoordinatorLayout) findViewById(R.id.coordinator);
+        mBottomSheet = findViewById(R.id.bottom_sheet);
         mRecyclerView = (RecyclerView) findViewById(R.id.recycler_view);
-
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -201,11 +200,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-    /* Interaction between MainActivity and DiscoverTilesListDialogFragment */
-    @Override
-    public void onDiscoverTilesClicked(int position) {
-
-    }
 
     /* Map Code*/
 
@@ -239,13 +233,14 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             mMap.setMyLocationEnabled(true);
             fetchLastLocation();
 
-            for (int i = 0; i < mDiscoverTiles.size(); i++) {
+            /*for (int i = 0; i < mDiscoverTiles.size(); i++) {
                 mMap.addMarker(new MarkerOptions()
                         .position(new LatLng(mDiscoverTiles.get(i).getLat(), mDiscoverTiles.get(i).getLng())).title(mDiscoverTiles.get(i).getName()));
-            }
+            }*/
         }
 
         initializeRecyclerView();
+        initializeBottomSheet();
     }
 
     public void searchDestination(String text, LatLng destination) {
@@ -310,47 +305,69 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     /*UI and Animations*/
-    public void initializeBottomSheet() {
-        mBottomsheetParams = mBottomsheet.getLayoutParams();
-        mBottomsheetParams.height = (mScreenHeight / 100) * 75;
-        mBottomsheet.setLayoutParams(mBottomsheetParams);
+    public void initializeRecyclerView() {
+
+        mRecyclerViewParams = mRecyclerView.getLayoutParams();
+        mRecyclerViewParams.width = 2 * mScreenWidth;
+        mRecyclerView.setLayoutParams(mRecyclerViewParams);
+        mAdapter = new RecyclerAdapter(mDiscoverTiles, MainActivity.this);
+        mLinearLayoutManager = new CustomLayoutManager(this, LinearLayoutManager.HORIZONTAL, false, false);
+        mRecyclerView.setLayoutManager(mLinearLayoutManager);
+        mRecyclerView.addItemDecoration(new DividerItemDecoration(0, horizontal, mScreenWidth, mScreenHeight));
+        mRecyclerView.setAdapter(mAdapter);
+
+
+        //ItemTouchHelper.Callback callback = new SimpleItemTouchHelperCallback(mAdapter);
+        //ItemTouchHelper touchHelper = new ItemTouchHelper(callback);
+        //touchHelper.attachToRecyclerView(mRecyclerView);
+    }
+
+    public void hideRecyclerView() {
+        //Log.d(TAG, "hideRecyclerView: HidingRecyclerView");
+        enableRecyclerViewScroll(false);
+    }
+
+    public void showRecyclerView() {
+        //Log.d(TAG, "showRecyclerView: Showing RecyclerView");
+        enableRecyclerViewScroll(true);
+        mRecyclerView.setOnFlingListener(null);
+        helper = new LinearSnapHelper();
+        helper.attachToRecyclerView(mRecyclerView);
+    }
+
+    public void enableRecyclerViewScroll(boolean enable){
+        mLinearLayoutManager.setScrollEnabled(enable);
+        mRecyclerView.setLayoutManager(mLinearLayoutManager);
+    }
+
+    public void initializeBottomSheet(){
+        // Initialize bottomsheet
+        mBottomSheetBehavior = (CustomBottomSheetBehavior) CustomBottomSheetBehavior.from(mBottomSheet);
+        mBottomSheetBehavior.setActivity(MainActivity.this);
+        mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+        mBottomSheetBehavior.setPeekHeight(mScreenHeight/11);
+        mBottomSheetBehavior.setHideable(false);
 
         mBottomSheetBehavior.setBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
             @Override
             public void onStateChanged(@NonNull View bottomSheet, int newState) {
-                switch (newState) {
-                    case BottomSheetBehavior.STATE_EXPANDED:
-                        bottomsheetstate = BOTTOM_SHEET_EXPANDED;
-                        mMap.getUiSettings().setAllGesturesEnabled(false);
-                        //mAdapter.;
+                switch (newState){
+                    case BottomSheetBehavior.STATE_COLLAPSED:{
+                        hideRecyclerView();
                         break;
-                    case BottomSheetBehavior.STATE_COLLAPSED:
-                        bottomsheetstate = BOTTOM_SHEET_CLOSED;
-                        mMap.getUiSettings().setAllGesturesEnabled(true);
-
+                    }
+                    case BottomSheetBehavior.STATE_EXPANDED:{
+                        showRecyclerView();
+                        break;
+                    }
                 }
-
             }
 
             @Override
             public void onSlide(@NonNull View bottomSheet, float slideOffset) {
-                fade(1 - slideOffset, SCALEFACTOR);
-                animateMap(slideOffset);
+
             }
         });
-    }
-
-    public void initializeRecyclerView() {
-        mAdapter = new RecyclerAdapter(mDiscoverTiles, MainActivity.this);
-        mLinearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
-        mRecyclerView.setLayoutManager(mLinearLayoutManager);
-        mRecyclerView.addItemDecoration(new DividerItemDecoration(0, horizontal, mScreenWidth, mScreenHeight));
-        mRecyclerView.setAdapter(mAdapter);
-        SnapHelper helper = new LinearSnapHelper();
-        helper.attachToRecyclerView(mRecyclerView);
-        ItemTouchHelper.Callback callback = new SimpleItemTouchHelperCallback(mAdapter);
-        ItemTouchHelper touchHelper = new ItemTouchHelper(callback);
-        touchHelper.attachToRecyclerView(mRecyclerView);
     }
 
     public void getScreenDimensions() {
@@ -359,29 +376,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         display.getSize(size);
         mScreenWidth = size.x;
         mScreenHeight = size.y;
-    }
-
-    public void fade(float value, float scale) {
-
-        //mMapFrag.setVisibility(View.VISIBLE);
-        //mMapFrag.setAlpha(value);
-
-        mAppBarLayout.setAlpha(value);
-        mAppBarLayout.setElevation(value * scale);
-        //Log.d(TAG, "fade: e is " + mAppBarLayout.getElevation());
-    }
-
-    public void animateMap(float value) {
-
-        //Log.d(TAG, "animateMap: mBottomSheetHeight is " + mBottomSheetHeight);
-        float NewHeight = (-(mBottomsheetParams.height) * (value)) + (mScreenHeight);
-        //Log.d(TAG, "animateMap: Height is " + NewHeight);
-        mMapParams = mapFragment.getView().getLayoutParams();
-        mMapParams.height = (int) NewHeight;
-        mapFragment.getView().setLayoutParams(mMapParams);
-        //Log.d(TAG, "animateMap: Height is " + mapFragment.getView().getLayoutParams().height);
-
-
     }
 
 
@@ -472,5 +466,13 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     public int getScreenHeight() {
         return mScreenHeight;
+    }
+
+    public int getRecyclerviewState() {
+        return mRecyclerviewState;
+    }
+
+    public void setRecyclerviewState(int recyclerviewState) {
+        mRecyclerviewState = recyclerviewState;
     }
 }
