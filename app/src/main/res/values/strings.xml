@@ -8,4 +8,10 @@
 
     <string name="search_bar_text">Search location here...</string>
 
+    <string name="placeholder_name">Kidds Bush Campsite</string>
+    <string name="placeholder_author">By Samuel Ling</string>
+    <string name="placeholder_description"> Entrance to many routes. Water may be cold even during summer.</string>
+    <string name="placeholder_weather">Rain</string>
+    <string name="placeholder_temp">76.2°C</string>
+
 </resources>

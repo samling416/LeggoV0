@@ -38,16 +38,7 @@ public class DividerItemDecoration extends RecyclerView.ItemDecoration {
         if (mode == vertical) {
 
         } else if (mode == horizontal) {
-
-            /*if (parent.getChildAdapterPosition(view) == 0) {
-                outRect.left = ((mScreenWidth/2) - 16) + ;
-            } else {
-                int imageWidth = (((mScreenHeight / 100) * RecyclerAdapter.ScaleFactor) * 300 / 200);
-                outRect.left = mScreenWidth / 2 - imageWidth / 2 - 16;
-            }*/
-
-            int imageWidth = (((mScreenHeight / 100) * RecyclerAdapter.ScaleFactor) * 300 / 200);
-            outRect.left = (mScreenWidth / 2 - imageWidth / 2) - 26;
+            outRect.left = -(horizontalSpaceWidth);
         }
     }
 

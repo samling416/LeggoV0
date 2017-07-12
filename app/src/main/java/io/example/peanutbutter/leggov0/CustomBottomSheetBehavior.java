@@ -44,7 +44,7 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior {
         if (child instanceof NestedScrollView) {
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN: {
-                    Log.d(TAG, "onInterceptTouchEvent: TOUCHED");
+                    //Log.d(TAG, "onInterceptTouchEvent: TOUCHED");
                     final int pointerIndex = MotionEventCompat.getActionIndex(event);
                     // Record starting positions.
                     final float y = event.getY();
@@ -57,7 +57,7 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior {
                     break;
                 }
                 case MotionEvent.ACTION_MOVE: {
-                    Log.d(TAG, "onInterceptTouchEvent: MOVING...");
+                    //Log.d(TAG, "onInterceptTouchEvent: MOVING...");
                     final int pointerIndex = MotionEventCompat.getActionIndex(event);
 
                     // Record starting positions.
@@ -68,17 +68,29 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior {
 
                     // If distance is greater than 30dp, Expand bottomsheet. If distance dragged less than -30dp, collapse.
                     if (dy > 30) {
-                        Log.d(TAG, "onInterceptTouchEvent: UP");
+                        //Log.d(TAG, "onInterceptTouchEvent: UP");
                         if (mActivity.getRecyclerviewState() == MainActivity.COLLAPSED) {
-                            setState(BottomSheetBehavior.STATE_EXPANDED);
+                            Log.d(TAG, "onInterceptTouchEvent: Expand RECYCLERVIEW");
+                            //setState(BottomSheetBehavior.STATE_EXPANDED);
                             mActivity.setRecyclerviewState(MainActivity.EXPANDED);
+                            return true;
+                        } else if (mActivity.getRecyclerviewState() == MainActivity.EXPANDED){
+                            //Log.d(TAG, "onInterceptTouchEvent: Expand CARD");
+                            //At this point, it's an UPWARDS swipe on a collapsed card
+                            return false;
                         }
                         return false;
                     } else if (dy < -30) {
-                        Log.d(TAG, "onInterceptTouchEvent: DOWN");
+                        //Log.d(TAG, "onInterceptTouchEvent: DOWN");
                         if (mActivity.getRecyclerviewState() == MainActivity.EXPANDED) {
-                            setState(BottomSheetBehavior.STATE_COLLAPSED);
+                            Log.d(TAG, "onInterceptTouchEvent: Collapse RECYCLERVIEW");
+                            //setState(BottomSheetBehavior.STATE_COLLAPSED);
                             mActivity.setRecyclerviewState(MainActivity.COLLAPSED);
+                            return true;
+
+                        } else if (mActivity.getRecyclerviewState() == MainActivity.COLLAPSED){
+                            //Log.d(TAG, "onInterceptTouchEvent: Collapse CARD");
+                            return false;
                         }
                         return false;
                     }

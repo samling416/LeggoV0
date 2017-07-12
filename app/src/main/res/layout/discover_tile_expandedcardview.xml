@@ -2,49 +2,199 @@
 <android.support.v7.widget.CardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/tile_cardview"
-    android:layout_width="match_parent"
+    android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:layout_margin="16dp"
     android:background="@color/white"
     android:orientation="vertical">
 
+
     <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:orientation="vertical">
 
         <RelativeLayout
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content">
 
             <ImageView
                 android:id="@+id/location_imageview"
-                android:layout_width="match_parent"
-                android:layout_height="255dp"
+                android:layout_width="wrap_content"
+                android:layout_height="200dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginLeft="8dp"
+                android:layout_marginRight="8dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="8dp"
                 android:scaleType="centerCrop"
                 android:src="@drawable/wanaka"/>
+
+            <android.support.design.widget.FloatingActionButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignEnd="@+id/location_imageview"
+                android:layout_alignRight="@+id/location_imageview"
+                android:layout_alignTop="@+id/location_textview"
+                android:layout_gravity="bottom"
+                android:layout_marginEnd="25dp"
+                android:layout_marginRight="25dp"
+                android:clickable="true"
+                android:scaleType="fitXY"
+                android:rotation="45"
+                android:backgroundTint="@color/blue"
+                android:src="@drawable/ic_navigation_white"/>
 
             <TextView
                 android:id="@+id/location_textview"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignBottom="@id/location_imageview"
-                android:layout_margin="16dp"
-                android:text="@string/app_name"
+                android:layout_marginBottom="8dp"
+                android:layout_marginLeft="16dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/expandablecard"
+                android:maxHeight="30dp"
+                android:text="@string/placeholder_name"
                 android:textColor="@color/white"
                 android:textSize="24sp"
-                android:textStyle="bold|italic"/>
+                android:textStyle="bold"
+                android:typeface="sans"/>
 
         </RelativeLayout>
 
-        <GridView
-            android:id="@+id/activity_gridview"
+        <GridLayout
+            android:id="@+id/activityIcon_GridLayout"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-        </GridView>
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginLeft="8dp"
+            android:layout_marginRight="8dp"
+            android:rowCount="1">
 
+            <ImageView
+                android:src="@drawable/ic_swimming"
+                />
+
+            <ImageView
+                android:src="@drawable/ic_tent"
+                />
+
+            <ImageView
+                android:src="@drawable/ic_kayaking"
+                />
+
+            <ImageView
+                android:src="@drawable/ic_hiking"
+                />
+
+        </GridLayout>
+
+        <TextView
+            android:id="@+id/description_placeholder"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginLeft="8dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="8dp"
+            android:fontFamily="sans-serif-light"
+            android:text="Entrance to many routes. Water may be cold even during summer."
+            android:textColor="@color/black"
+            android:textSize="16sp"/>
+
+        <GridLayout
+            android:id="@+id/weatherIcon_GridLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginLeft="8dp"
+            android:layout_marginRight="8dp"
+            android:rowCount="1">
+
+            <ImageView
+                android:src="@drawable/ic_snow"
+                />
+
+            <ImageView
+                android:src="@drawable/ic_snow"
+                />
+
+            <ImageView
+                android:src="@drawable/ic_rain"
+                />
+
+            <ImageView
+                android:src="@drawable/ic_cloudy"
+                />
+
+        </GridLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="0dp"
+            android:weightSum="90">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginLeft="8dp"
+                android:layout_marginRight="8dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="8dp"
+                android:layout_weight="30"
+                android:fontFamily=""
+                android:text="15 min"
+                android:textSize="14sp"
+                android:textStyle="italic"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginLeft="8dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="8dp"
+                android:layout_weight="30"
+                android:fontFamily=""
+                android:text="100m"
+                android:textSize="14sp"
+                android:textStyle="italic"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginLeft="8dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="8dp"
+                android:layout_weight="30"
+                android:fontFamily=""
+                android:text="from Mount Eden"
+                android:textSize="14sp"
+                android:textStyle="italic"/>
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/author_id"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="8dp"
+            android:layout_marginStart="8dp"
+            android:text="@string/placeholder_author"
+            android:textSize="7sp"
+            android:textStyle="italic"/>
 
     </LinearLayout>
 
 
 </android.support.v7.widget.CardView>
+

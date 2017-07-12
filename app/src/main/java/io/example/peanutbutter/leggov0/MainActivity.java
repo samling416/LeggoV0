@@ -1,9 +1,11 @@
 package io.example.peanutbutter.leggov0;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.graphics.Point;
 import android.location.Location;
 import android.support.annotation.NonNull;
@@ -20,6 +22,7 @@ import android.support.v7.widget.LinearSnapHelper;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SnapHelper;
 import android.support.v7.widget.helper.ItemTouchHelper;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
 import android.view.GestureDetector;
@@ -158,9 +161,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
         mAppBarLayout = (AppBarLayout) findViewById(R.id.app_bar);
-        mCoordinatorLayout = (CoordinatorLayout) findViewById(R.id.coordinator);
+        //mCoordinatorLayout = (CoordinatorLayout) findViewById(R.id.coordinator);
         mBottomSheet = findViewById(R.id.bottom_sheet);
         mRecyclerView = (RecyclerView) findViewById(R.id.recycler_view);
+
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -307,15 +311,17 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     /*UI and Animations*/
     public void initializeRecyclerView() {
 
-        mRecyclerViewParams = mRecyclerView.getLayoutParams();
-        mRecyclerViewParams.width = 2 * mScreenWidth;
-        mRecyclerView.setLayoutParams(mRecyclerViewParams);
+        //mRecyclerViewParams = mRecyclerView.getLayoutParams();
+        //mRecyclerViewParams.width = mScreenWidth;
+        //mRecyclerView.setLayoutParams(mRecyclerViewParams);
         mAdapter = new RecyclerAdapter(mDiscoverTiles, MainActivity.this);
-        mLinearLayoutManager = new CustomLayoutManager(this, LinearLayoutManager.HORIZONTAL, false, false);
+        mLinearLayoutManager = new CustomLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
         mRecyclerView.setLayoutManager(mLinearLayoutManager);
-        mRecyclerView.addItemDecoration(new DividerItemDecoration(0, horizontal, mScreenWidth, mScreenHeight));
+        int offset8dp = (int)(convertDpToPixel(8, MainActivity.this));
+        mRecyclerView.addItemDecoration(new DividerItemDecoration(offset8dp, horizontal, mScreenWidth, mScreenHeight));
         mRecyclerView.setAdapter(mAdapter);
-
+        helper = new LinearSnapHelper();
+        helper.attachToRecyclerView(mRecyclerView);
 
         //ItemTouchHelper.Callback callback = new SimpleItemTouchHelperCallback(mAdapter);
         //ItemTouchHelper touchHelper = new ItemTouchHelper(callback);
@@ -330,33 +336,32 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     public void showRecyclerView() {
         //Log.d(TAG, "showRecyclerView: Showing RecyclerView");
         enableRecyclerViewScroll(true);
-        mRecyclerView.setOnFlingListener(null);
-        helper = new LinearSnapHelper();
-        helper.attachToRecyclerView(mRecyclerView);
+        //mRecyclerView.setOnFlingListener(null);
     }
 
-    public void enableRecyclerViewScroll(boolean enable){
-        mLinearLayoutManager.setScrollEnabled(enable);
+    public void enableRecyclerViewScroll(boolean enable) {
+        //mLinearLayoutManager.setScrollEnabled(enable);
         mRecyclerView.setLayoutManager(mLinearLayoutManager);
     }
 
-    public void initializeBottomSheet(){
+    public void initializeBottomSheet() {
         // Initialize bottomsheet
         mBottomSheetBehavior = (CustomBottomSheetBehavior) CustomBottomSheetBehavior.from(mBottomSheet);
         mBottomSheetBehavior.setActivity(MainActivity.this);
         mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
-        mBottomSheetBehavior.setPeekHeight(mScreenHeight/11);
+        float margin22dp = convertDpToPixel(32, MainActivity.this);
+        mBottomSheetBehavior.setPeekHeight(((mScreenHeight / 100) * ScaleFactor) + (int) margin22dp);
         mBottomSheetBehavior.setHideable(false);
 
         mBottomSheetBehavior.setBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
             @Override
             public void onStateChanged(@NonNull View bottomSheet, int newState) {
-                switch (newState){
-                    case BottomSheetBehavior.STATE_COLLAPSED:{
-                        hideRecyclerView();
+                switch (newState) {
+                    case BottomSheetBehavior.STATE_COLLAPSED: {
+                        showRecyclerView();
                         break;
                     }
-                    case BottomSheetBehavior.STATE_EXPANDED:{
+                    case BottomSheetBehavior.STATE_EXPANDED: {
                         showRecyclerView();
                         break;
                     }
@@ -460,6 +465,20 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
+    public static float convertDpToPixel(float dp, Context context) {
+        Resources resources = context.getResources();
+        DisplayMetrics metrics = resources.getDisplayMetrics();
+        float px = dp * ((float) metrics.densityDpi / DisplayMetrics.DENSITY_DEFAULT);
+        return px;
+    }
+
+    public static float convertPixelsToDp(float px, Context context) {
+        Resources resources = context.getResources();
+        DisplayMetrics metrics = resources.getDisplayMetrics();
+        float dp = px / ((float) metrics.densityDpi / DisplayMetrics.DENSITY_DEFAULT);
+        return dp;
+    }
+
     public GoogleMap getMap() {
         return mMap;
     }
@@ -474,5 +493,21 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     public void setRecyclerviewState(int recyclerviewState) {
         mRecyclerviewState = recyclerviewState;
+    }
+
+    public RecyclerView getRecyclerView() {
+        return mRecyclerView;
+    }
+
+    public View getBottomSheet() {
+        return mBottomSheet;
+    }
+
+    public CustomBottomSheetBehavior getBottomSheetBehavior() {
+        return mBottomSheetBehavior;
+    }
+
+    public CoordinatorLayout getCoordinatorLayout() {
+        return mCoordinatorLayout;
     }
 }
