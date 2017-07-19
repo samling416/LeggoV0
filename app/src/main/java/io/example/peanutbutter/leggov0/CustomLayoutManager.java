@@ -76,7 +76,7 @@ public class CustomLayoutManager extends LinearLayoutManager {
     @Override
     public void onLayoutChildren(RecyclerView.Recycler recycler, RecyclerView.State state) {
         super.onLayoutChildren(recycler, state);
-        scrollVerticallyBy(0, recycler, state);
+        scrollHorizontallyBy(0, recycler, state);
     }
 
     @Override

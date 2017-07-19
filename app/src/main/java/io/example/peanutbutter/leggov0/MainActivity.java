@@ -1,6 +1,7 @@
 package io.example.peanutbutter.leggov0;
 
 import android.Manifest;
+import android.animation.LayoutTransition;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -8,6 +9,7 @@ import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Point;
 import android.location.Location;
+import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.BottomSheetBehavior;
@@ -21,15 +23,13 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.LinearSnapHelper;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SnapHelper;
-import android.support.v7.widget.helper.ItemTouchHelper;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
-import android.view.GestureDetector;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -44,6 +44,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
@@ -69,6 +70,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     public static final int PAN_TO_DESTINATION_ANIMATION = 2;
     public static final int vertical = 0, horizontal = 1;
     public static final int EXPANDED = 0, COLLAPSED = 1;
+    public static final int GENERALDISCOVER = 0, SUPERBROWSE = 1;
 
     // UI elements
     private ImageButton mMyLocation;
@@ -82,19 +84,26 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private SupportMapFragment mapFragment;
     private CustomBottomSheetBehavior mBottomSheetBehavior;
     private View mBottomSheet;
+    private TextView mDiscovertitle;
 
     private boolean permissionflag;
+    private boolean mSearchMarkerflag = false;
+    private Marker mSearchMarker;
     private GoogleMap mMap;
+    private String mCardlocString = "Cur.Loc";
+    private LatLng mCardlocCoord = new LatLng(0,0);
     private int mScreenHeight;
     private int mScreenWidth;
     private int mCameraAnimation;
     private Boolean locationFetched = false;
     private LatLng currentLoc;
+    private LatLng mSelectedLoc;
     private ArrayList<DiscoverTile> mDiscoverTiles;
     private RecyclerAdapter mAdapter;
     private FusedLocationProviderClient mFusedLocationClient;
     private SnapHelper helper;
     private int mRecyclerviewState = COLLAPSED;
+    private int mMapState = GENERALDISCOVER;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -111,20 +120,50 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         // Load data
         mDiscoverTiles = new ArrayList<DiscoverTile>();
         ArrayList<Integer> item1activities = new ArrayList<>();
+        ArrayList<String> item1description = new ArrayList<>();
+
         ArrayList<Integer> item2activities = new ArrayList<>();
+        ArrayList<String> item2description = new ArrayList<>();
+
         ArrayList<Integer> item3activities = new ArrayList<>();
-        item1activities.add(R.drawable.ic_kayaking);
-        item1activities.add(R.drawable.ic_swimming);
-        item1activities.add(R.drawable.ic_tent);
+        ArrayList<String> item3description = new ArrayList<>();
+
+        ArrayList<Integer> item4activities = new ArrayList<>();
+        ArrayList<String> item4description = new ArrayList<>();
+
+        item1activities.add(R.drawable.ic_hiking);
+        item1activities.add(R.drawable.ic_running);
+
+        item1description.add("Hike");
+        item1description.add("Run");
+
         item2activities.add(R.drawable.ic_hiking);
         item2activities.add(R.drawable.ic_running);
+        item2activities.add(R.drawable.ic_tent);
+
+        item2description.add("Hike");
+        item2description.add("Run");
+        item2description.add("Camp");
+
         item3activities.add(R.drawable.ic_running);
         item3activities.add(R.drawable.ic_kayaking);
-        mDiscoverTiles.add(new DiscoverTile("Wanaka", (R.drawable.wanaka), item1activities, -44.71, 169.13));
-        mDiscoverTiles.add(new DiscoverTile("Auckland", (R.drawable.discover), item2activities, CENTER.latitude, CENTER.longitude));
-        mDiscoverTiles.add(new DiscoverTile("Taupo", (R.drawable.group), item3activities, -38.67, 176.075));
-        mDiscoverTiles.add(new DiscoverTile("Mt.Eden", R.drawable.profile, item1activities, -36.877, 174.764));
 
+        item3description.add("Run");
+        item3description.add("Kayak");
+
+        item4activities.add(R.drawable.ic_diving);
+        item4description.add("Cliff jump");
+
+
+        String description = "Mount Eden summit. 15 minute walk to the top. Photo taken at sunset.";
+        mDiscoverTiles.add(new DiscoverTile("Mt.Eden Summit", R.drawable.one, item1activities, item1description, -36.877429, 174.764420, description));
+
+        description = "Massive jump awaits the brave ones. Entrance located at the mouth of a bridge. ";
+        mDiscoverTiles.add(new DiscoverTile("Old Hydrodam, Mangaweka", (R.drawable.two), item4activities, item4description, -39.803522, 175.811104, description));
+
+        mDiscoverTiles.add(new DiscoverTile("Wanaka", (R.drawable.wanaka), item1activities, item1description, -44.71, 169.13));
+        mDiscoverTiles.add(new DiscoverTile("Auckland", (R.drawable.discover), item2activities, item2description, CENTER.latitude, CENTER.longitude));
+        mDiscoverTiles.add(new DiscoverTile("Taupo", (R.drawable.group), item3activities, item3description, -38.67, 176.075));
 
         // Set UI elements
         mMyLocation = (ImageButton) findViewById(R.id.location_button);
@@ -133,6 +172,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             public void onClick(View v) {
                 if (mMap.isMyLocationEnabled()) {
                     fetchLastLocation();
+                    mCardlocString = "Cur.Loc";
+                    mCardlocCoord = currentLoc;
                 }
             }
         });
@@ -145,11 +186,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     PlacePicker.IntentBuilder intentBuilder = new PlacePicker.IntentBuilder();
                     Intent intent = intentBuilder.build(MainActivity.this);
                     // Start the Intent by requesting a result, identified by a request code.
-                    startActivityForResult(intent, PLACE_PICKER_REQUEST); // Result should be placename and coordinates
-                    // Hide the pick option in the UI to prevent users from starting the picker
-                    // multiple times.
-                    //showPickAction(false);
-
+                    startActivityForResult(intent, PLACE_PICKER_REQUEST); // Result should be placename and coordinates;
                 } catch (GooglePlayServicesRepairableException e) {
                     GooglePlayServicesUtil
                             .getErrorDialog(e.getConnectionStatusCode(), MainActivity.this, 0);
@@ -164,6 +201,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         //mCoordinatorLayout = (CoordinatorLayout) findViewById(R.id.coordinator);
         mBottomSheet = findViewById(R.id.bottom_sheet);
         mRecyclerView = (RecyclerView) findViewById(R.id.recycler_view);
+        mDiscovertitle = (TextView) findViewById(R.id.discover_title);
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -198,8 +236,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 /*String toastPlaceNameMsg = String.format("Place selected: %s", place.getName());
                 Toast.makeText(this, toastPlaceNameMsg, Toast.LENGTH_LONG).show();*/
 
-                // Update map
+                // Update map and placeLoc
                 searchDestination((String) place.getName(), place.getLatLng());
+                mCardlocString = (String) place.getName();
+                mCardlocCoord = place.getLatLng();
             }
         }
     }
@@ -221,36 +261,52 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         Log.d(TAG, "onMapReady: ");
+        switch (mMapState) {
+            case GENERALDISCOVER:
+                mMap = googleMap;
 
-        mMap = googleMap;
+                // Initialize map
+                mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+                mMap.setBuildingsEnabled(true);
+                mMap.setLatLngBoundsForCameraTarget(NEWZEALAND);
+                mMap.setMinZoomPreference(5);
+                mMap.getUiSettings().setMyLocationButtonEnabled(false);
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(CENTER, 5));
+                mMap.getUiSettings().setCompassEnabled(false);
 
-        // Initialize map
-        mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
-        mMap.setBuildingsEnabled(true);
-        mMap.setLatLngBoundsForCameraTarget(NEWZEALAND);
-        mMap.setMinZoomPreference(5);
-        mMap.getUiSettings().setMyLocationButtonEnabled(false);
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(CENTER, 5));
-        mMap.getUiSettings().setCompassEnabled(false);
+                if (permissionflag) {
+                    mMap.setMyLocationEnabled(true);
+                    fetchLastLocation();
 
-        if (permissionflag) {
-            mMap.setMyLocationEnabled(true);
-            fetchLastLocation();
+                }
 
-            /*for (int i = 0; i < mDiscoverTiles.size(); i++) {
-                mMap.addMarker(new MarkerOptions()
-                        .position(new LatLng(mDiscoverTiles.get(i).getLat(), mDiscoverTiles.get(i).getLng())).title(mDiscoverTiles.get(i).getName()));
-            }*/
+                initializeRecyclerView();
+                initializeBottomSheet();
+                break;
+            case SUPERBROWSE:
+
+                break;
         }
-
-        initializeRecyclerView();
-        initializeBottomSheet();
     }
 
     public void searchDestination(String text, LatLng destination) {
-        Log.d(TAG, "updateSearchBar: ");
+        //Log.d(TAG, "updateSearchBar: ");
+        /* This function calls PanToDestination and adds a target to show searched point.
+        */
 
         panToDestination(destination);
+
+        if (!mSearchMarkerflag) {
+            mSearchMarker = mMap.addMarker(new MarkerOptions()
+                    .position(destination)
+                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_target)));
+            mSearchMarkerflag = true;
+        } else {
+            mSearchMarker.remove();
+            mSearchMarker = mMap.addMarker(new MarkerOptions()
+                    .position(destination)
+                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_target)));
+        }
 
         // Update TextView showing location
         mSearchText.setText(text);
@@ -286,6 +342,15 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
+    @Override
+    public void onBackPressed() {
+        if (mBottomSheetBehavior.getState() == BottomSheetBehavior.STATE_EXPANDED) {
+            mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+        } else {
+            super.onBackPressed();
+        }
+    }
+
     /*Location Services*/
     @SuppressWarnings("MissingPermission")
     public void fetchLastLocation() {
@@ -303,6 +368,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 }
                 locationFetched = true;
                 panToDestination(currentLoc);
+                mCardlocCoord = currentLoc;
                 locationFetched = false;
             }
         });
@@ -317,7 +383,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         mAdapter = new RecyclerAdapter(mDiscoverTiles, MainActivity.this);
         mLinearLayoutManager = new CustomLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
         mRecyclerView.setLayoutManager(mLinearLayoutManager);
-        int offset8dp = (int)(convertDpToPixel(8, MainActivity.this));
+        int offset8dp = (int) (convertDpToPixel(8, MainActivity.this));
         mRecyclerView.addItemDecoration(new DividerItemDecoration(offset8dp, horizontal, mScreenWidth, mScreenHeight));
         mRecyclerView.setAdapter(mAdapter);
         helper = new LinearSnapHelper();
@@ -349,9 +415,18 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         mBottomSheetBehavior = (CustomBottomSheetBehavior) CustomBottomSheetBehavior.from(mBottomSheet);
         mBottomSheetBehavior.setActivity(MainActivity.this);
         mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
-        float margin22dp = convertDpToPixel(32, MainActivity.this);
+        float margin22dp = convertDpToPixel(70, MainActivity.this);
         mBottomSheetBehavior.setPeekHeight(((mScreenHeight / 100) * ScaleFactor) + (int) margin22dp);
         mBottomSheetBehavior.setHideable(false);
+
+        LayoutTransition transition = new LayoutTransition();
+        transition.setAnimateParentHierarchy(false);
+        LinearLayout mLL = (LinearLayout) findViewById(R.id.btLayout);
+        mLL.setLayoutTransition(transition);
+        //ViewGroup.LayoutParams mBottomSheetLayoutParams = mBottomSheet.getLayoutParams();
+        //Log.d(TAG, "initializeBottomSheet: Full screen height is " + mScreenHeight);
+        //mBottomSheetLayoutParams.height = (mScreenHeight * 20) / 30;
+        //mBottomSheet.setLayoutParams(mBottomSheetLayoutParams);
 
         mBottomSheetBehavior.setBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
             @Override
@@ -359,10 +434,20 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 switch (newState) {
                     case BottomSheetBehavior.STATE_COLLAPSED: {
                         showRecyclerView();
+
+                        // Collapse cards
+                        mAdapter.setVisibility(false);
+                        //animateCards(0);
+                        mAdapter.notifyDataSetChanged();
+
                         break;
                     }
                     case BottomSheetBehavior.STATE_EXPANDED: {
                         showRecyclerView();
+
+                        // Expand cards.
+                        mAdapter.setVisibility(true);
+                        mAdapter.notifyDataSetChanged();
                         break;
                     }
                 }
@@ -371,8 +456,81 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onSlide(@NonNull View bottomSheet, float slideOffset) {
 
+                // These functions transition into browse mode.
+                animateToolbar(slideOffset);
+                animateBottomSheet(slideOffset);
             }
         });
+    }
+
+    public void animateToolbar(float slideOffset) {
+        mAppBarLayout.setAlpha(-slideOffset + 1);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            mAppBarLayout.setTranslationZ(-10 * slideOffset);
+        } else {
+            //TODO: write support for min 16
+        }
+    }
+
+    public void animateBottomSheet(float slideOffet) {
+        // This function aims to animate the bottom sheet when changing states. It should:
+        // - Pull down the recycleview
+        // - Add a map(view or fragment) to the top which will be coupled to the item selected.
+        // - A bottom tile to perhaps show more information???
+
+        // Move recyclerView
+        if (slideOffet == 1f) {
+            Log.d(TAG, "animateBottomSheet: scale");
+            //mRecyclerView.animate().translationY(20 * mScreenHeight / 100);
+            mapFragment.getView().animate().alpha(0);
+            mDiscovertitle.setVisibility(View.VISIBLE);
+
+            // Adjust height
+            /*int finalheight = mScreenHeight - ((mScreenHeight * 20) / 30);
+            int finalwidth = finalheight * (mScreenWidth/mScreenHeight);
+            ViewGroup.LayoutParams lp = mapFragment.getView().getLayoutParams();
+            //lp.height = (int) ((-(mScreenHeight - finalheight) * slideOffet) + mScreenHeight);
+            mapFragment.getView().setLayoutParams(lp);
+            //mapFragment.getView().animate().scaleX(0.8f);
+            mapFragment.getView().animate().scaleY(0.6f);
+            mapFragment.getView().animate().alpha(1);*/
+
+        } else if (slideOffet == 0f) {
+            mDiscovertitle.setVisibility(View.GONE);
+            //mRecyclerView.animate().translationY(0);
+            mapFragment.getView().animate().alpha(1);
+            mDiscovertitle.setVisibility(View.GONE);
+        } else {
+            mDiscovertitle.setVisibility(View.GONE);
+
+        }
+
+
+        // Create a new map fragment that will slide in.
+        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
+
+        // Adjust height
+        /*int finalheight = mScreenHeight - ((mScreenHeight * 20) / 30);
+        ViewGroup.LayoutParams lp = mapFragment.getView().getLayoutParams();
+        lp.height = (int) ((-(mScreenHeight - finalheight) * slideOffet) + mScreenHeight);
+        mapFragment.getView().setLayoutParams(lp);
+
+        // Scale map view as you drag along.
+        if (slideOffet == 1f) {
+            Log.d(TAG, "animateBottomSheet: Scale");
+            mapFragment.getView().animate().scaleX(0.9f);
+            mapFragment.getView().animate().scaleY(0.8f);
+        } else if (slideOffet == 0f) {
+            //float scalefactor = -(1f - 0.5f) * slideOffet + 1f;
+            mapFragment.getView().animate().scaleX(1f);
+            mapFragment.getView().animate().scaleY(1f);
+        }*/
+
+
+    }
+
+    public void animateCards(float slideOffset) {
     }
 
     public void getScreenDimensions() {
@@ -509,5 +667,21 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     public CoordinatorLayout getCoordinatorLayout() {
         return mCoordinatorLayout;
+    }
+
+    public String getCardlocString() {
+        return mCardlocString;
+    }
+
+    public void setCardlocString(String cardlocString) {
+        mCardlocString = cardlocString;
+    }
+
+    public LatLng getCardlocCoord() {
+        return mCardlocCoord;
+    }
+
+    public void setCardlocCoord(LatLng cardlocCoord) {
+        mCardlocCoord = cardlocCoord;
     }
 }

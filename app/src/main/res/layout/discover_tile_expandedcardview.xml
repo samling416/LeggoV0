@@ -12,6 +12,7 @@
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:animateLayoutChanges="true"
         android:orientation="vertical">
 
         <RelativeLayout
@@ -39,10 +40,10 @@
                 android:layout_gravity="bottom"
                 android:layout_marginEnd="25dp"
                 android:layout_marginRight="25dp"
-                android:clickable="true"
-                android:scaleType="fitXY"
-                android:rotation="45"
                 android:backgroundTint="@color/blue"
+                android:clickable="true"
+                android:rotation="45"
+                android:scaleType="fitXY"
                 android:src="@drawable/ic_navigation_white"/>
 
             <TextView
@@ -105,14 +106,56 @@
             android:textColor="@color/black"
             android:textSize="16sp"/>
 
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="75dp"
+                android:layout_height="75dp"
+                android:layout_marginLeft="8dp"
+                android:layout_marginRight="8dp"
+                android:adjustViewBounds="true"
+                android:scaleType="fitXY"
+                android:src="@drawable/main_cloudy"/>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_gravity="center">
+
+                <TextView
+                    android:id="@+id/card_temp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="-5dp"
+                    android:fontFamily="sans-serif-light"
+                    android:text="29°C"
+                    android:textSize="36sp"/>
+
+                <TextView
+                    android:id="@+id/day_description"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="20dp"
+                    android:layout_marginStart="20dp"
+                    android:hint="Sunny"/>
+            </LinearLayout>
+
+        </LinearLayout>
+
         <GridLayout
             android:id="@+id/weatherIcon_GridLayout"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_marginLeft="8dp"
             android:layout_marginRight="8dp"
-            android:rowCount="1">
+            android:layout_weight="0.6"
+            android:rowCount="2">
 
             <ImageView
                 android:src="@drawable/ic_snow"
@@ -130,7 +173,15 @@
                 android:src="@drawable/ic_cloudy"
                 />
 
+            <ImageView
+                android:src="@drawable/ic_rain"/>
+
+            <ImageView
+                android:src="@drawable/ic_cloudy"
+                />
+
         </GridLayout>
+
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -177,7 +228,7 @@
                 android:layout_marginTop="8dp"
                 android:layout_weight="30"
                 android:fontFamily=""
-                android:text="from Mount Eden"
+                android:text="from Mt.Eden"
                 android:textSize="14sp"
                 android:textStyle="italic"/>
 

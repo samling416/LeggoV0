@@ -67,7 +67,7 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior {
                     final float dy = mLastTouchY - y;
 
                     // If distance is greater than 30dp, Expand bottomsheet. If distance dragged less than -30dp, collapse.
-                    if (dy > 30) {
+                    if (dy > 20) {
                         //Log.d(TAG, "onInterceptTouchEvent: UP");
                         if (mActivity.getRecyclerviewState() == MainActivity.COLLAPSED) {
                             Log.d(TAG, "onInterceptTouchEvent: Expand RECYCLERVIEW");
@@ -80,7 +80,7 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior {
                             return false;
                         }
                         return false;
-                    } else if (dy < -30) {
+                    } else if (dy < -20) {
                         //Log.d(TAG, "onInterceptTouchEvent: DOWN");
                         if (mActivity.getRecyclerviewState() == MainActivity.EXPANDED) {
                             Log.d(TAG, "onInterceptTouchEvent: Collapse RECYCLERVIEW");

@@ -1,17 +1,26 @@
 <resources>
     <string name="app_name">LeggoV0</string>
     <string name="title_activity_main">Map</string>
+    <string name="browse_title">Discover</string>
 
     <string name="title_location_permission">Lmao</string>
     <string name="text_location_permission">Yo this app needs permission to use your location</string>
     <string name="ok">Fine</string>
 
-    <string name="search_bar_text">Search location here...</string>
+    <string name="search_bar_text">Where to? </string>
 
     <string name="placeholder_name">Kidds Bush Campsite</string>
     <string name="placeholder_author">By Samuel Ling</string>
     <string name="placeholder_description"> Entrance to many routes. Water may be cold even during summer.</string>
     <string name="placeholder_weather">Rain</string>
     <string name="placeholder_temp">76.2°C</string>
+
+    <string name="Mon">Mon</string>
+    <string name="Tues">Tues</string>
+    <string name="Wed">Wed</string>
+    <string name="Thur">Thurs</string>
+    <string name="Fri">Fri</string>
+    <string name="Sat">Sat</string>
+    <string name="Sun">Sun</string>
 
 </resources>

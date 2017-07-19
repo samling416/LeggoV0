@@ -4,10 +4,7 @@ import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.Resources;
 import android.os.Build;
-import android.support.design.widget.BottomSheetBehavior;
-import android.support.transition.TransitionManager;
 import android.support.v7.widget.CardView;
-import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -15,9 +12,9 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
 import android.widget.GridLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -46,6 +43,7 @@ public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerAdapter.ViewHo
     private Boolean misExpanded = false;
     private GoogleMap mMap;
     private MainActivity mActivity;
+    private ViewHolder mViewHolder;
     private int mScreenHeight;
     private int mPosition;
     private int lastposition;
@@ -53,9 +51,7 @@ public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerAdapter.ViewHo
     public float inity;
     public float finaly;
     private ViewGroup.LayoutParams mImageviewParams;
-
-    public int mCardviewExpandedHeight;
-    public int mCardviewCollapsedHeight;
+    private boolean isVisible = false;
 
 
     public class ViewHolder extends RecyclerView.ViewHolder {
@@ -63,26 +59,34 @@ public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerAdapter.ViewHo
         public final CardView mCardView;
         public final ImageView mImageView;
         public final TextView mNameTextView;
-        /*public final TextView mDescriptTextView;
+        public final TextView mDescriptTextView;
         public final TextView mTimeTextView;
         public final TextView mLocTextView;
         public final TextView mDistTextView;
         public final GridLayout mGridLayoutActivity;
-        public final GridLayout mGridLayoutWeather;*/
+        public final GridLayout mGridLayoutWeather;
+        public final LinearLayout mWeatherLinearLayout;
+        public final ImageView mWeatherMainImageView;
+        public final TextView mWeatherMainTemp;
+        public final TextView mWeatherMainDesc;
 
+        public boolean weatherFetched = false;
 
         public ViewHolder(View view) {
             super(view);
-            //Log.d(TAG, "ViewHolder: ");
             mCardView = (CardView) view.findViewById(R.id.tile_cardview);
             mImageView = (ImageView) view.findViewById(R.id.location_imageview);
             mNameTextView = (TextView) view.findViewById(R.id.location_textview);
-            //mDescriptTextView = (TextView) view.findViewById(R.id.description_placeholder);
-            //mTimeTextView = (TextView) view.findViewById(R.id.time_textview);
-            //mLocTextView = (TextView) view.findViewById(R.id.initial_loc_textview);
-            //mDistTextView = (TextView) view.findViewById(R.id.distance_textview);
-            //mGridLayoutWeather = (GridLayout) view.findViewById(R.id.weatherIcon_GridLayout);
-            //mGridLayoutActivity = (GridLayout) view.findViewById(R.id.activityIcon_GridLayout);
+            mDescriptTextView = (TextView) view.findViewById(R.id.description_placeholder);
+            mTimeTextView = (TextView) view.findViewById(R.id.time_textview);
+            mLocTextView = (TextView) view.findViewById(R.id.initial_loc_textview);
+            mDistTextView = (TextView) view.findViewById(R.id.distance_textview);
+            mGridLayoutWeather = (GridLayout) view.findViewById(R.id.weatherIcon_GridLayout);
+            mGridLayoutActivity = (GridLayout) view.findViewById(R.id.activityIcon_GridLayout);
+            mWeatherMainDesc = (TextView) view.findViewById(R.id.day_description);
+            mWeatherMainImageView = (ImageView) view.findViewById(R.id.mainweatherImage);
+            mWeatherMainTemp = (TextView) view.findViewById(R.id.card_temp);
+            mWeatherLinearLayout = (LinearLayout) view.findViewById(R.id.mainweatherlayout);
 
             initializeCard();
             initializeMarkers();
@@ -133,30 +137,31 @@ public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerAdapter.ViewHo
     }
 
     @Override
-    public void onBindViewHolder(final RecyclerAdapter.ViewHolder holder, final int position) {
-        Log.d(TAG, "onBindViewHolder: Discover Tile " + mDiscoverTiles.get(mPosition).getName() + " has been loaded.");
-        holder.mImageView.setImageResource(mDiscoverTiles.get(position).getPhoto());
-        holder.mNameTextView.setText(mDiscoverTiles.get(mPosition).getName());
+    public void onBindViewHolder(RecyclerAdapter.ViewHolder holder, int position) {
+        Log.d(TAG, "onBindViewHolder: Discover Tile " + mDiscoverTiles.get(position).getName() + " has been loaded.");
+        final int bindposition = position;
+        holder.mImageView.setImageResource(mDiscoverTiles.get(bindposition).getPhoto());
+        holder.mNameTextView.setText(mDiscoverTiles.get(bindposition).getName());
+        holder.mDescriptTextView.setText(mDiscoverTiles.get(bindposition).getDescription());
         holder.mImageView.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                animateToTileLocation(new LatLng(mDiscoverTiles.get(mPosition).getLat(),mDiscoverTiles.get(mPosition).getLng()));
+                animateToTileLocation(new LatLng(mDiscoverTiles.get(bindposition).getLat(), mDiscoverTiles.get(bindposition).getLng()));
                 return true;
             }
         });
-        /*fetchActivities(holder, position);
-        fetchWeather(holder);
-        holder.mCardView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-            @Override
-            public void onGlobalLayout() {
-                if (weathercallfinish) {
-                    // TODO: IMPLEMENT ANIMATIONS
-                    initializeAnimation(holder, mPosition);
-                }
-            }
-        });*/
-        //measureFinalandInitialCardHeights(holder, mPosition);
 
+        fetchDistance(holder);
+        fetchActivities(holder, position);
+        fetchWeather(holder);
+
+        // Dynamica data
+        holder.mLocTextView.setText("From " + mActivity.getCardlocString());
+        if (isVisible) {
+            expandCards(holder);
+        } else {
+            collapseCards(holder);
+        }
     }
 
     @Override
@@ -228,12 +233,46 @@ public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerAdapter.ViewHo
         Log.d(TAG, "onItemSwiped: Item swiped " + position);
     }
 
-    public void elevateCard(ViewHolder vh) {
+    public void scaleImageView(ViewHolder vh) {
         final ViewHolder holder = vh;
+        int margin = (int) convertDpToPixel(8, this.mActivity);
+        ValueAnimator animation;
+        if (isVisible) {
+            animation = ValueAnimator.ofInt(margin, 0);
+        } else {
+            animation = ValueAnimator.ofInt(0, margin);
+        }
+        animation.setDuration(500);
+        animation.start();
+        animation.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                int animatedvalue = (int) animation.getAnimatedValue();
+                ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams) holder.mImageView.getLayoutParams();
+                layoutParams.setMargins(animatedvalue, animatedvalue, animatedvalue, 0);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                    layoutParams.setMarginStart(animatedvalue);
+                    layoutParams.setMarginEnd(animatedvalue);
+                }
+                holder.mImageView.setLayoutParams(layoutParams);
+            }
+
+        });
     }
 
-    public void ExpandCard(ViewHolder vh, int position) {
-        final ViewHolder holder = vh;
+    public void expandCards(ViewHolder vh) {
+
+        vh.mDescriptTextView.setVisibility(View.VISIBLE);
+        vh.mTimeTextView.setVisibility(View.VISIBLE);
+        vh.mLocTextView.setVisibility(View.VISIBLE);
+        vh.mDistTextView.setVisibility(View.VISIBLE);
+        vh.mGridLayoutWeather.setVisibility(View.VISIBLE);
+        vh.mWeatherLinearLayout.setVisibility(View.VISIBLE);
+
+        //scaleImageView(vh);
+
+        // Argument: ViewHolder vh, int position
+        /*final ViewHolder holder = vh;
 
         ValueAnimator animation = ValueAnimator.ofInt(370, 700);
         animation.setDuration(500);
@@ -254,11 +293,21 @@ public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerAdapter.ViewHo
         //setCardVisibility(holder);
 
         TransitionManager.beginDelayedTransition(mActivity.getRecyclerView());
-        notifyDataSetChanged();
+        notifyDataSetChanged();*/
     }
 
-    public void CollapseCard(ViewHolder vh, int position) {
-        final ViewHolder holder = vh;
+    public void collapseCards(ViewHolder vh) {
+
+        vh.mDescriptTextView.setVisibility(View.GONE);
+        vh.mTimeTextView.setVisibility(View.GONE);
+        vh.mLocTextView.setVisibility(View.GONE);
+        vh.mDistTextView.setVisibility(View.GONE);
+        vh.mGridLayoutWeather.setVisibility(View.GONE);
+        vh.mWeatherLinearLayout.setVisibility(View.GONE);
+
+        //scaleImageView(vh);
+
+        /*final ViewHolder holder = vh;
 
         ValueAnimator animation = ValueAnimator.ofInt(700, 400);
         animation.setDuration(500);
@@ -278,17 +327,31 @@ public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerAdapter.ViewHo
         misExpanded = false;
         //setCardVisibility(holder);
         TransitionManager.beginDelayedTransition(mActivity.getRecyclerView());
-        notifyDataSetChanged();
+        notifyDataSetChanged();*/
     }
 
-    /*public void fetchWeather(ViewHolder holder) {
-        holder.mGridLayoutWeather.setColumnCount(6);
-        WeatherDownload weatherDownload = new WeatherDownload(holder);
-        weatherDownload.setmContext(mActivity);
-        double Lat = mDiscoverTiles.get(mPosition).getLat();
-        double Lng = mDiscoverTiles.get(mPosition).getLng();
-        // Open http
-        weatherDownload.execute("http://api.openweathermap.org/data/2.5/forecast/daily?lat=" + Double.toString(Lat) + "&lon=" + Double.toString(Lng) + "&cnt=6&appid=a29798c8e7bcb161dcf56cca00f66a77");
+    public void fetchWeather(ViewHolder holder) {
+
+        if (!holder.weatherFetched) {
+            holder.mGridLayoutWeather.setColumnCount(6);
+            WeatherDownload weatherDownload = new WeatherDownload(holder);
+            weatherDownload.setmContext(mActivity);
+            double Lat = mDiscoverTiles.get(holder.getAdapterPosition()).getLat();
+            double Lng = mDiscoverTiles.get(holder.getAdapterPosition()).getLng();
+            // Open http
+            weatherDownload.execute("http://api.openweathermap.org/data/2.5/forecast/daily?lat=" + Double.toString(Lat) + "&lon=" + Double.toString(Lng) + "&cnt=6&appid=a29798c8e7bcb161dcf56cca00f66a77&units=metric");
+            holder.weatherFetched = true;
+        }
+
+    }
+
+    public void fetchDistance(ViewHolder holder) {
+
+        DistanceDownload distanceDownload = new DistanceDownload(holder);
+        String origin = (Double.toString(mActivity.getCardlocCoord().latitude)) + "," + (Double.toString(mActivity.getCardlocCoord().longitude));
+        String desitnation = (Double.toString(mDiscoverTiles.get(holder.getAdapterPosition()).getLat())) + "," + (Double.toString(mDiscoverTiles.get(holder.getAdapterPosition()).getLng()));
+        //Log.d(TAG, "fetchDistance is https://maps.googleapis.com/maps/api/directions/json?origin=" + origin + "&destination=" + desitnation + "&key=AIzaSyArfOWewSx0B6ZvRV4khmXn9ff4dVgyFf8");
+        distanceDownload.execute("https://maps.googleapis.com/maps/api/directions/json?origin=" + origin + "&destination=" + desitnation + "&key=AIzaSyArfOWewSx0B6ZvRV4khmXn9ff4dVgyFf8");
 
     }
 
@@ -296,22 +359,33 @@ public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerAdapter.ViewHo
         // Display Activity Icons (Only needs to be done on initialization)
         int c = 0;
         holder.mGridLayoutActivity.removeAllViews();
+        holder.mGridLayoutActivity.setRowCount(1);
+
         for (int y = 0; y < mDiscoverTiles.get(position).noOfActivities(); y++) {
-            holder.mGridLayoutActivity.setRowCount(1);
-            ImageView iconImageView = new ImageView(mActivity);
-            iconImageView.setImageResource(mDiscoverTiles.get(position).getActivities().get(y));
-            GridLayout.LayoutParams param = new GridLayout.LayoutParams();
+            ImageView iconImageView;
+            TextView iconTextView;
+
+            /*GridLayout.LayoutParams param = new GridLayout.LayoutParams();
             param.height = GridLayoutManager.LayoutParams.WRAP_CONTENT;
-            param.width = GridLayoutManager.LayoutParams.WRAP_CONTENT;
+            param.width = GridLayoutManager.LayoutParams.WRAP_CONTENT;*/
+
+            CustomGridLayoutItem mItem = new CustomGridLayoutItem(this.mActivity);
+            iconImageView = (ImageView) mItem.findViewById(R.id.gridlayout_image);
+            iconImageView.setImageResource(mDiscoverTiles.get(position).getActivities().get(y));
+
+            iconTextView = (TextView) mItem.findViewById(R.id.gridlayout_text);
+            iconTextView.setText(mDiscoverTiles.get(position).getActivityNames().get(y));
+
             /*Resources r = mContext.getResources();
             int px = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 48, r.getDisplayMetrics());
             LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(px, px);
             iconImageView.setLayoutParams(layoutParams);*/
 
-            /*holder.mGridLayoutActivity.addView(iconImageView);
+            holder.mGridLayoutActivity.addView(mItem);
             c++;
         }
-    }*/
+    }
+
 
     public void initializeAnimation(final ViewHolder holder, final int position) {
         // Animation logic.
@@ -345,7 +419,7 @@ public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerAdapter.ViewHo
                                 Log.d(TAG, "onTouch: Swiped down");
                                 if (mActivity.getRecyclerviewState() == MainActivity.EXPANDED) {
                                     if (misExpanded) {
-                                        //CollapseCard(holder, holder.getAdapterPosition());
+                                        //collapseCards(holder, holder.getAdapterPosition());
                                     }
                                 }
                                 return true;
@@ -354,7 +428,7 @@ public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerAdapter.ViewHo
                                 if (mActivity.getRecyclerviewState() == MainActivity.EXPANDED) {
                                     Toast.makeText(mActivity, "Expandcard", Toast.LENGTH_SHORT).show();
                                     if (!misExpanded) {
-                                        //ExpandCard(holder, holder.getAdapterPosition());
+                                        //expandCards(holder, holder.getAdapterPosition());
                                     }
                                 }
                                 return true;
@@ -390,6 +464,7 @@ public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerAdapter.ViewHo
         holder.itemView.setActivated(misExpanded);
     }*/
 
+
     public static float convertDpToPixel(float dp, Context context) {
         Resources resources = context.getResources();
         DisplayMetrics metrics = resources.getDisplayMetrics();
@@ -404,5 +479,7 @@ public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerAdapter.ViewHo
         return dp;
     }
 
-
+    public void setVisibility(boolean visible) {
+        isVisible = visible;
+    }
 }

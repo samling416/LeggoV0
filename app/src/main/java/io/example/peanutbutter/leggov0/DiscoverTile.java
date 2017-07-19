@@ -15,11 +15,13 @@ public class DiscoverTile implements Parcelable {
     private String mName;
     private int mPhoto;
     private ArrayList<Integer> mActivities;
+    private ArrayList<String> mActivityNames;
     private LatLng mLocation;
     private double mLat;
     private double mLng;
-    private int mOrientation; //0 is front.
+    private String mDescription;
     private boolean alreadyinitialized = false;
+
 
     public DiscoverTile() {
     }
@@ -35,7 +37,6 @@ public class DiscoverTile implements Parcelable {
     }
 
     public DiscoverTile(String name, int photo, ArrayList<Integer> activities) {
-        mOrientation = 0;
         mName = name;
         mPhoto = photo;
         mActivities = activities;
@@ -43,13 +44,26 @@ public class DiscoverTile implements Parcelable {
         mLat = -36.858931;
     }
 
-    public DiscoverTile(String name, int photo, ArrayList<Integer> activities, Double Lat, Double Lng) {
-        mOrientation = 0;
-        mName = name;
-        mPhoto = photo;
-        mActivities = activities;
-        mLng = Lng;
-        mLat = Lat;
+    public DiscoverTile(String name, int photo, ArrayList<Integer> activities, ArrayList<String> activityNames, Double Lat, Double Lng) {
+        this.mName = name;
+        this.mPhoto = photo;
+        this.mActivities = activities;
+        this.mActivityNames = activityNames;
+        this.mLng = Lng;
+        this.mLat = Lat;
+        this.mDescription = "(No description has been entered.)";
+        this.mLocation = new LatLng(Lat,Lng);
+    }
+
+    public DiscoverTile(String name, int photo, ArrayList<Integer> activities, ArrayList<String> activityNames, Double Lat, Double Lng, String mDescription) {
+        this.mName = name;
+        this.mPhoto = photo;
+        this.mActivities = activities;
+        this.mActivityNames = activityNames;
+        this.mLng = Lng;
+        this.mLat = Lat;
+        this.mDescription = mDescription;
+        this.mLocation = new LatLng(Lat,Lng);
     }
 
     public boolean isAlreadyinitialized() {
@@ -60,12 +74,12 @@ public class DiscoverTile implements Parcelable {
         this.alreadyinitialized = alreadyinitialized;
     }
 
-    public int getOrientation() {
-        return mOrientation;
+    public String getDescription() {
+        return mDescription;
     }
 
-    public void setOrientation(int orientation) {
-        mOrientation = orientation;
+    public void setDescription(String description) {
+        mDescription = description;
     }
 
     public String getName() {
@@ -112,6 +126,14 @@ public class DiscoverTile implements Parcelable {
 
     public double getLng() {
         return mLng;
+    }
+
+    public ArrayList<String> getActivityNames() {
+        return mActivityNames;
+    }
+
+    public void setActivityNames(ArrayList<String> activityNames) {
+        mActivityNames = activityNames;
     }
 
     @Override
